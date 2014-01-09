@@ -1,0 +1,4 @@
+A suite of python Tor utilities
+
+* torhandler: handles parallel tor instances to communicate through
+* torcrawler: retrieves multiple urls via tor virtual circuits

@@ -33,7 +33,7 @@ class QuerySocks(Query):
         self._query.setopt(pycurl.PROXYPORT, socks_port)
         self._query.setopt(pycurl.PROXYTYPE, pycurl.PROXYTYPE_SOCKS4)
 
-    def query(self, url):
+    def fetch(self, url):
         """
         Uses pycurl to fetch a site using the proxy.
         """

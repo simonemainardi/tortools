@@ -7,8 +7,6 @@ import pycurl
 import logging
 import os
 
-CURLMULTI_PER_PROCESS = 3
-
 logging.basicConfig(level=logging.DEBUG,format='[%(threadName)-10s] %(message)s')
 
 # We should ignore SIGPIPE when using pycurl.NOSIGNAL - see
@@ -74,9 +72,10 @@ class TorCrawler(TorHandler):
         super(TorCrawler,self).__init__(num_tor_instances, base_socks_port)
         self.results_directory = results_directory
         self.num_urls = 0
+        self.curlmulti_handles_per_process = curlmulti_handles_per_process
 
     def load_urls(self, **kwargs):
-        urls = ["https://www.atagar.com/echo.php"] * 500
+        urls = ["https://www.atagar.com/echo.php"] * 100
         urls_queue = Queue()
         for url in urls:
             filename = os.path.join(self.results_directory, "doc_%03d.txt" % (urls_queue.qsize() + 1))
@@ -85,8 +84,8 @@ class TorCrawler(TorHandler):
         self.num_urls = int(urls_queue.qsize())
 
     def _process_launcher(self, process_index, queue):
-        base_socks_port = self.base_socks_port + (CURLMULTI_PER_PROCESS * process_index)
-        base_control_port = self.base_control_port + (CURLMULTI_PER_PROCESS * process_index)
+        base_socks_port = self.base_socks_port + (self.curlmulti_handles_per_process * process_index)
+        base_control_port = self.base_control_port + (self.curlmulti_handles_per_process * process_index)
         # do the crawl
         # -- initialize pycurl objects
         # see
@@ -94,7 +93,7 @@ class TorCrawler(TorHandler):
         # http://stackoverflow.com/questions/1959240/get-many-pages-with-pycurl
         m = pycurl.CurlMulti()
         m.handles = []
-        for inst in range(CURLMULTI_PER_PROCESS):
+        for inst in range(self.curlmulti_handles_per_process):
             c = pycurl.Curl()
             c.socks_port = base_socks_port + inst
             c.control_port = base_control_port + inst
@@ -172,7 +171,7 @@ class TorCrawler(TorHandler):
             return None
         self.launch()
         # launch multiple tor instances using threads
-        num_downloaders = self.num_tor_instances / CURLMULTI_PER_PROCESS
+        num_downloaders = self.num_tor_instances / self.curlmulti_handles_per_process
         logging.debug("launching %i crawler processes" % num_downloaders)
         for process_index in range(num_downloaders):
             pro = Process(target=self._process_launcher, args=[process_index,self.urls_queue])
@@ -183,6 +182,6 @@ class TorCrawler(TorHandler):
         self.kill()
 
 if __name__ == "__main__":
-    th = TorCrawler(9)
+    th = TorCrawler(1,1)
     th.load_urls()
     th.crawl()

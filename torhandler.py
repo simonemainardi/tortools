@@ -34,7 +34,7 @@ class TorHandler(object):
         self.tor_processes_queue = Queue()
         self.base_socks_port = base_socks_port
         self.base_control_port = base_socks_port + num_tor_instances
-        self.data_directory_prefix = "data/tor_"
+        self.data_directory_prefix = os.path.expanduser("~/.tor/tor_")
 
     def launch(self):
         """
@@ -56,7 +56,7 @@ class TorHandler(object):
             # must specify a different data directory for each tor process
             # otherwise you would get an error. See
             # https://gitweb.torproject.org/stem.git/commitdiff/56aac96d6213f28a6b597c640affc7a5a963bf75
-            data_directory = "%s%i" % (self.data_directory_prefix, process_index)
+            data_directory = "%ss%ic%i" % (self.data_directory_prefix, socks_port, control_port)
             # it is better to preserve cache directories since they significantly speed-up
             # circuit creation
             if not os.path.exists(data_directory):
@@ -67,6 +67,14 @@ class TorHandler(object):
                     'SocksPort': str(socks_port),
                     'ControlPort' : str(control_port),
                     'DataDirectory' : data_directory,
+# stuff to keep contacting an host from the same exit node
+                    'TrackHostExits' : '.', # match everything
+                    'TrackHostExitsExpire' : '1800', # 30 mins
+#                    'MaxCircuitDirtiness'  : '1800',
+#                    'CircuitStreamTimeout' : '1800',
+#                    'MaxClientCircuitsPending' : '1',
+# done, let's continue with the config
+                    'DisableDebuggerAttachment' : "0", #see https://stem.torproject.org/tutorials/east_of_the_sun.html
                     'Log': [
                         'NOTICE file %s/tor_notice_log.txt'% data_directory,
                         'ERR file %s/tor_error_log.txt' % data_directory,

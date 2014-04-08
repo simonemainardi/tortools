@@ -56,7 +56,7 @@ class TorHandler(object):
             # must specify a different data directory for each tor process
             # otherwise you would get an error. See
             # https://gitweb.torproject.org/stem.git/commitdiff/56aac96d6213f28a6b597c640affc7a5a963bf75
-            data_directory = "%ss%ic%i" % (self.data_directory_prefix, socks_port, control_port)
+            data_directory = "%s%.2i" % (self.data_directory_prefix, process_index)
             # it is better to preserve cache directories since they significantly speed-up
             # circuit creation
             if not os.path.exists(data_directory):
@@ -76,6 +76,7 @@ class TorHandler(object):
 # done, let's continue with the config
                     'DisableDebuggerAttachment' : "0", #see https://stem.torproject.org/tutorials/east_of_the_sun.html
                     'Log': [
+                        'DEBUG file %s/tor_debug_log.txt'% data_directory,
                         'NOTICE file %s/tor_notice_log.txt'% data_directory,
                         'ERR file %s/tor_error_log.txt' % data_directory,
                     ],
@@ -129,5 +130,5 @@ class TorHandler(object):
 if __name__ == "__main__":
     th = TorHandler(10)
     th.launch()
-    a = raw_input()
+    a = raw_input('press any key to terminate...')
     th.kill()
